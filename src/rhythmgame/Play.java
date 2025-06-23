@@ -8,6 +8,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -54,17 +55,15 @@ public class Play extends javax.swing.JFrame implements ActionListener {
 
     private Settings settings;
 
-    private JLabel accPlay;
     private JButton backButton;
     private JButton startSongBtn;
 
     private JLabel rankPlay;
     private JLabel scorePlay;
+    private JLabel accPlay;
+    private JLabel comboLabel;
 
-    private JLabel sickPlay;
-    private JLabel badPlay;
-    private JLabel goodPlay;
-    private JLabel missPlay;
+    private JLabel hitJudge;
     private JProgressBar songProgress;
 
     private double noteSpeed;
@@ -85,9 +84,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     private static final int BAD_SCORE = 50;
     private static final int MISS_SCORE = 0;
 
-    private int targetLineY = gamePanel.getTargetLineY();
     // End of variables declaration                   
-
     public Play(Song song) throws IOException {
         initComponents();
         this.song = song;
@@ -102,9 +99,8 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         settings.loadFromFile(); // read values from settings.txt
 
         // Add game panel as the lanes and notes
-        gamePanel = new GamePanel(/* parameters */);
+        gamePanel = new GamePanel();
         gamePanel.setBounds(0, 0, 750, 900); // Define position and size
-        c.add(gamePanel);
 
         gamePanel.addComponentListener(new ComponentAdapter() {
             @Override
@@ -112,8 +108,52 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                 updateNoteSpeed();
             }
         });
+        // Set up key listener
+        gamePanel.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyChar() == settings.getLaneBindL().charAt(0)) {
+                    System.out.println("Left key pressed");
+                }
+            }
+        });
+        gamePanel.setFocusable(true);
+        gamePanel.requestFocusInWindow();
         updateNoteSpeed(); // Initial speed calculation
 
+        // Score label
+        scorePlay.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 36));
+        scorePlay.setBounds(20, 20, 200, 50); // x, y, width, height
+
+        // Accuracy label
+        accPlay.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 24));
+        accPlay.setBounds(20, 70, 200, 40);
+
+        // Combo label (create if it doesn't exist)
+        comboLabel = new JLabel("x0");
+        comboLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        // Calculate right side of lanes (adjust positions as needed)
+        int laneCount = 4;
+        int laneWidth = 100;
+        int panelWidth = gamePanel.getWidth();
+        int startX = (panelWidth - laneCount * laneWidth) / 2;
+        int comboX = startX + laneCount * laneWidth + 40; // 40px padding from right edge of lanes
+        int comboY = (int) (gamePanel.getHeight() * 0.8) - 30; // near the hit line
+        comboLabel.setBounds(comboX, comboY, 120, 50);
+        add(comboLabel);
+
+        // hitJudge label, set its font/color and position:
+        hitJudge.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        hitJudge.setForeground(Color.YELLOW);
+        // Place above the target line, left-aligned
+        int hitJudgeY = (int) (gamePanel.getHeight() * 0.8) - 60;
+        hitJudge.setBounds(30, hitJudgeY, 300, 50);
+        hitJudge.setVisible(false);
+        add(hitJudge);
+
+        add(scorePlay);
+        add(accPlay);
+        add(hitJudge);
         notes = new ArrayList<>();
 
         // Configure and position components from initComponents
@@ -124,10 +164,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         accPlay.setBounds(20, 450, 73, 25);
         scorePlay.setBounds(20, 480, 50, 25);
         // Position feedback labels to the left of the red line (invisible for now)
-        sickPlay.setBounds(20, 700, 106, 30);
-        goodPlay.setBounds(20, 730, 106, 30);
-        badPlay.setBounds(20, 760, 106, 30);
-        missPlay.setBounds(20, 790, 106, 30);
+        hitJudge.setBounds(20, 700, 106, 30);
 
         songProgress.setBounds(0, 0, 750, 12);
 
@@ -169,18 +206,6 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         // Add gamePanel last so it’s below buttons
         c.add(gamePanel);
 
-        // Set up key listener
-        gamePanel.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                if (e.getKeyChar() == 'd') {
-                    System.out.println("D key pressed");
-                }
-            }
-        });
-        gamePanel.setFocusable(true);
-        gamePanel.requestFocusInWindow();
-
         // Force repaint so all GUI renders
         c.revalidate();
         c.repaint();
@@ -208,11 +233,8 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         rankPlay = new javax.swing.JLabel();
         accPlay = new javax.swing.JLabel();
         scorePlay = new javax.swing.JLabel();
-        sickPlay = new javax.swing.JLabel();
+        hitJudge = new javax.swing.JLabel();
         songProgress = new javax.swing.JProgressBar();
-        goodPlay = new javax.swing.JLabel();
-        badPlay = new javax.swing.JLabel();
-        missPlay = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBounds(new java.awt.Rectangle(900, 900, 900, 900));
@@ -235,34 +257,10 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         scorePlay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         scorePlay.setText("0");
 
-        sickPlay.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
-        sickPlay.setText("SICK!");
-        sickPlay.setVisible(false);
+        hitJudge.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
+        hitJudge.setText("SICK!");
+        hitJudge.setVisible(false);
 
-        goodPlay.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
-        goodPlay.setText("GOOD!");
-        goodPlay.setVisible(false);
-
-        badPlay.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
-        badPlay.setText("BAD!");
-        badPlay.setVisible(false);
-
-        missPlay.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
-        missPlay.setText("MISS!");
-        missPlay.setVisible(false);
-
-//        jPanel1.setBackground(new java.awt.Color(0, 0, 0));
-//
-//        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-//        jPanel1.setLayout(jPanel1Layout);
-//        jPanel1Layout.setHorizontalGroup(
-//                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-//                        .addGap(0, 250, Short.MAX_VALUE)
-//        );
-//        jPanel1Layout.setVerticalGroup(
-//                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-//                        .addGap(0, 599, Short.MAX_VALUE)
-//        );
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -273,8 +271,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGap(91, 91, 91)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addComponent(goodPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                        .addComponent(sickPlay)))
+                                                        .addComponent(hitJudge)))
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGap(58, 58, 58)
                                                 .addComponent(accPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -288,12 +285,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                                                 .addGap(66, 66, 66)
                                                 .addComponent(scorePlay)))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                //.addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(missPlay, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(badPlay, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(69, 69, 69))
+                                .addGap(18, 18, 18))
         );
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -311,16 +303,11 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                                                 .addComponent(accPlay)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 257, Short.MAX_VALUE)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                                        .addComponent(sickPlay)
-                                                        .addComponent(badPlay))
+                                                        .addComponent(hitJudge))
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                                        .addComponent(goodPlay)
-                                                        .addComponent(missPlay))
-                                                .addGap(126, 126, 126))
-                                        .addGroup(layout.createSequentialGroup()
-                                                //.addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                                                        .addGap(126, 126, 126))))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -365,9 +352,9 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == startSongBtn) { // prompt to start the song
             playSong();
-            startSongBtn.setVisible(false);
             playGame();
-
+            startSongBtn.setVisible(false);
+            
         }
     }
 
@@ -418,7 +405,6 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         audioTimer.start();
     }
 
-    // Got the txt file reader idea for each note from a youtube video
     private void playGame() {
         notes = new ArrayList<>();
         baseNotes = new ArrayList<>();
@@ -476,9 +462,9 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     }
 
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyChar() == settings.getLaneBindL().charAt(0)) { // e.g., KeyEvent.VK_SPACE
+        if (e.getKeyChar() == settings.getLaneBindL().charAt(0)) { 
             for (Note note : notes) {
-                if (note.isOverlapping(targetLineY, 50)) {
+                if (note.isOverlapping(gamePanel.getTargetLineY(), 50)) {
                     registerHit(note);
                     break; // Only allow one hit per press
                 }
@@ -511,8 +497,19 @@ public class Play extends javax.swing.JFrame implements ActionListener {
             baseScore = MISS_SCORE;
             combo = 0; // Reset combo on miss
         }
+        
+        comboLabel.setText("x" + combo);
 
-        // Combo multiplier (1% per combo, capped at 2x for example)
+        // Show hitJudge
+        hitJudge.setText(hitResult);
+        hitJudge.setVisible(true);
+
+        // Hide hitJudge after 400ms
+        Timer judgeTimer = new Timer(400, evt -> hitJudge.setVisible(false));
+        judgeTimer.setRepeats(false);
+        judgeTimer.start();
+
+        // Combo multiplier (5% more per combo)
         double comboMultiplier = Math.min(1.0 + combo * 0.05, 10.0);
         int scoreGain = (int) (baseScore * comboMultiplier);
         score += scoreGain;
@@ -522,23 +519,16 @@ public class Play extends javax.swing.JFrame implements ActionListener {
             maxCombo = combo;
         }
 
-        // Remove the note if not a miss (optional: for miss, you might handle removal elsewhere)
+        // Remove the note if not a miss
         if (!hitResult.equals("Miss!")) {
             notes.remove(note);
         }
 
-        // Optional: Display result
-        updateStats(hitResult, note.getLane(), note.getY());
-
-        // Optional: Play sound, update UI, etc.
-        // playHitSound(hitResult);
-        // updateScoreDisplay(score, combo);
-        // Debug
         System.out.println(hitResult + " +" + scoreGain + " (Combo: " + combo + ")");
     }
-    
-    private void updateStats(){
-        
+
+    private void updateStats() {
+
     }
 
     private void updateNotes(long songTime) {
@@ -555,13 +545,15 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         }
     }
 
-    private class GamePanel extends JPanel {
+    class GamePanel extends JPanel {
 
         private static final int LANE_COUNT = 4;
         private static final int LANE_WIDTH = 100;
         private static final int NOTE_HEIGHT = 20;
 
-        // got this idea from GitHub
+        private int targetLineY;
+
+        // got this idea from Stack Overflow
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -579,7 +571,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                 g.fillRect(x, 0, LANE_WIDTH - 10, getHeight());
             }
             // Draw target line
-            int targetLineY = (int) (getHeight() * 0.8); // 80% of panel height
+            targetLineY = (int) (getHeight() * 0.8); // 80% of panel height
             g.setColor(Color.RED);
             g.fillRect(startX, targetLineY, totalLanesWidth - 10, 5);
 
@@ -602,6 +594,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     @Override
     public void dispose() {
         super.dispose();
+        settings.saveToFile();
         if (clip != null) {
             clip.stop();
             clip.close();

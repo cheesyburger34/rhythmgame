@@ -57,8 +57,6 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
     private boolean waitForLaneR = false;
 
     // End of variables declaration
-    Settings settings = new Settings(255, 'd', 'f', 'j', 'k', 1, false);
-
     public Settings() throws IOException {
 
         // Initialize JFrame
@@ -66,27 +64,38 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
         setTitle("Settings Screen");
         setLocationRelativeTo(null);
 
+        loadFromFile();
+        syncUI();
+        
+        
+
+        noteSpeedSlider.setMinimum(1);
+        noteSpeedSlider.setMaximum(4);
+        noteSpeedSlider.setMajorTickSpacing(1); // One tick per speed value
+        noteSpeedSlider.setPaintTicks(true);
+        noteSpeedSlider.setPaintLabels(true); // Shows numbers under ticks
+        noteSpeedSlider.setSnapToTicks(true);   // <-- ensures slider snaps to ticks
+        noteSpeedSlider.addMouseListener(this);
+        noteSpeed = noteSpeedSlider.getValue();
+
         backButton.addActionListener(this);
         noLossCheck.addActionListener(this);
+        
         dimSlider.setMaximum(255);
         dimSlider.addMouseListener(this);
+        backgroundDim = dimSlider.getExtent();
+        
+        System.out.println(backgroundDim); // Debug
+        
         laneL.addActionListener(this);
         laneML.addActionListener(this);
         laneMR.addActionListener(this);
         laneR.addActionListener(this);
+        
         laneL.addKeyListener(this);
         laneML.addKeyListener(this);
         laneMR.addKeyListener(this);
         laneR.addKeyListener(this);
-        backgroundDim = dimSlider.getExtent();
-        System.out.println(backgroundDim); // Debug
-        noteSpeed = noteSpeedSlider.getExtent() / 10;
-        laneBindL = laneL.getText();
-        laneBindML = laneML.getText();
-        laneBindMR = laneMR.getText();
-        laneBindR = laneR.getText();
-        noLoss = false;
-        dimSlider.setSnapToTicks(true);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
@@ -96,7 +105,6 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
         initComponents();
         setTitle("Settings Screen");
         setLocationRelativeTo(null);
-        
 
         // Set GUI components
         dimSlider.setValue(bgD);
@@ -116,30 +124,34 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
         noteSpeed = nS;
         noLoss = nL;
 
+        noteSpeedSlider.setMinimum(1);
+        noteSpeedSlider.setMaximum(4);
+        noteSpeedSlider.setMajorTickSpacing(1); // One tick per speed value
+        noteSpeedSlider.setPaintTicks(true);
+        noteSpeedSlider.setPaintLabels(true); // Shows numbers under ticks
+        noteSpeedSlider.setSnapToTicks(true);   // Ensures slider snaps to ticks
+        noteSpeedSlider.addMouseListener(this);
+        noteSpeed = noteSpeedSlider.getValue();
+
         backButton.addActionListener(this);
         noLossCheck.addActionListener(this);
+        
         dimSlider.setMaximum(255);
         dimSlider.addMouseListener(this);
+        backgroundDim = dimSlider.getExtent();
+        
+        System.out.println(backgroundDim); // Debug
+        
         laneL.addActionListener(this);
         laneML.addActionListener(this);
         laneMR.addActionListener(this);
         laneR.addActionListener(this);
+        
         laneL.addKeyListener(this);
         laneML.addKeyListener(this);
         laneMR.addKeyListener(this);
         laneR.addKeyListener(this);
-        backgroundDim = dimSlider.getExtent();
-        System.out.println(backgroundDim); // Debug
-        noteSpeed = noteSpeedSlider.getExtent() / 10;
-        laneBindL = laneL.getText();
-        laneBindML = laneML.getText();
-        laneBindMR = laneMR.getText();
-        laneBindR = laneR.getText();
-        noLoss = false;
-        dimSlider.setSnapToTicks(true);
 
-        // Add listeners, etc. (copy from no-arg constructor)
-        // ...
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -348,7 +360,8 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
     }// </editor-fold>                        
 
     public void saveToFile() {
-        try (PrintWriter writer = new PrintWriter(new FileWriter("settings.txt", true))) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("settings.txt", false))) {
+
             writer.println("backgroundDim = " + backgroundDim);
             writer.println("laneBindL = " + laneBindL);
             writer.println("laneBindML = " + laneBindML);
@@ -398,6 +411,7 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == backButton) {
+            saveToFile();
             try {
                 new Menu();
             } catch (IOException ex) {
@@ -408,32 +422,35 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
 
         if (e.getSource() == noLossCheck) {
             noLoss = noLossCheck.isSelected();
-            settings.setNoLoss(noLoss);
+            this.setNoLoss(noLoss);
+            saveToFile();
         }
         if (e.getSource() == laneL) {
             laneL.setText("...");
             waitForLaneL = true; // Start waiting for key input
         }
-        
+
         if (e.getSource() == laneML) {
             laneML.setText("...");
             waitForLaneML = true; // Start waiting for key input
         }
-        
+
         if (e.getSource() == laneMR) {
             laneMR.setText("...");
             waitForLaneMR = true; // Start waiting for key input
         }
-        
+
         if (e.getSource() == laneR) {
             laneR.setText("...");
             waitForLaneR = true; // Start waiting for key input
         }
     }
-    
-    
-    
+
     public void loadFromFile() {
+        File file = new File("settings.txt");
+        if (!file.exists()) {
+            saveToFile(); // Create file with current/default settings
+        }
         try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader("settings.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -470,8 +487,17 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
             }
         } catch (java.io.IOException e) {
             e.printStackTrace();
-            // Optionally set defaults here if file doesn't exist
         }
+    }
+
+    public void syncUI() {
+        dimSlider.setValue(backgroundDim);
+        laneL.setText(laneBindL.toUpperCase());
+        laneML.setText(laneBindML.toUpperCase());
+        laneMR.setText(laneBindMR.toUpperCase());
+        laneR.setText(laneBindR.toUpperCase());
+        noteSpeedSlider.setValue(noteSpeed);
+        noLossCheck.setSelected(noLoss);
     }
 
     @Override
@@ -488,8 +514,16 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
     public void mouseReleased(MouseEvent e) {
         if (e.getSource() == dimSlider) {
             backgroundDim = dimSlider.getValue();
-            settings.setBackgroundDim(backgroundDim);
+            this.setBackgroundDim(backgroundDim);
+            saveToFile();
             System.out.println(backgroundDim); // Debug
+        }
+
+        if (e.getSource() == noteSpeedSlider) {
+            noteSpeed = noteSpeedSlider.getValue();
+            this.setNoteSpeed(noteSpeed);
+            saveToFile();
+            System.out.println(noteSpeed);
         }
     }
 
@@ -523,7 +557,8 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
             laneL.setText(laneBindL.toUpperCase()); // Show new keybind on button
             waitForLaneL = false; // Reset flag
 
-            settings.setLaneBindL(laneBindL);
+            this.setLaneBindL(laneBindL);
+            saveToFile();
         }
         if (waitForLaneML) {
             char key = e.getKeyChar();
@@ -531,29 +566,31 @@ public class Settings extends javax.swing.JFrame implements ActionListener, Mous
             laneML.setText(laneBindML.toUpperCase()); // Show new keybind on button
             waitForLaneML = false; // Reset flag
 
-            settings.setLaneBindML(laneBindML);
+            this.setLaneBindML(laneBindML);
+            saveToFile();
         }
-        
+
         if (waitForLaneMR) {
             char key = e.getKeyChar();
             laneBindMR = String.valueOf(key);
             laneMR.setText(laneBindMR.toUpperCase()); // Show new keybind on button
             waitForLaneMR = false; // Reset flag
-            settings.setLaneBindMR(laneBindMR);
+            this.setLaneBindMR(laneBindMR);
+            saveToFile();
         }
-        
-         if (waitForLaneR) {
+
+        if (waitForLaneR) {
             char key = e.getKeyChar();
             laneBindR = String.valueOf(key);
             laneR.setText(laneBindR.toUpperCase()); // Show new keybind on button
             waitForLaneR = false; // Reset flag
-            settings.setLaneBindR(laneBindR);
+            this.setLaneBindR(laneBindR);
+            saveToFile();
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
 }

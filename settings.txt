@@ -1,0 +1,7 @@
+backgroundDim = 0
+laneBindL = A
+laneBindML = S
+laneBindMR = D
+laneBindR = F
+noteSpeed = 4
+noLoss = true

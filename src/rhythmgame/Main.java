@@ -13,6 +13,5 @@ import java.io.IOException;
 public class Main {
     public static void main(String[] args) throws IOException {
         new Menu();
-//        LOOK AT ICS3U LOGS FOR WHAT TO DO NEXT
     }
 }
