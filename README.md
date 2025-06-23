@@ -1,4 +1,4 @@
 # rhythmgame
 
 The game must be started through the **main** class. If it's started anywhere else, it breaks.
-*This is only a prototype. It's very bad; choppy, audio isn't the greatest, etc.
+Not much in this readme. The rest is in the google doc.
