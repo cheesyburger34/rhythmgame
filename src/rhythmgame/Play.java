@@ -84,9 +84,11 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     private static final int BAD_SCORE = 50;
     private static final int MISS_SCORE = 0;
 
-    // End of variables declaration                   
+    // End of variables declaration                 
+    
+    Font f = new Font("Segoe UI", Font.BOLD, 28);
     public Play(Song song) throws IOException {
-        initComponents();
+//        initComponents();
         this.song = song;
         setTitle("Play");
         setSize(750, 900);
@@ -101,6 +103,20 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         // Add game panel as the lanes and notes
         gamePanel = new GamePanel();
         gamePanel.setBounds(0, 0, 750, 900); // Define position and size
+        
+        backButton = new JButton("<--");
+        backButton.setFont(f);
+        backButton.addActionListener(this);
+        backButton.setBounds(10, 10, 92, 30);
+        c.add(backButton);
+        
+        rankPlay = new JLabel("D");
+        rankPlay.setFont(f);
+        // rankPlay.setBounds()
+        accPlay = new javax.swing.JLabel();
+        scorePlay = new javax.swing.JLabel();
+        hitJudge = new javax.swing.JLabel();
+        songProgress = new javax.swing.JProgressBar();
 
         gamePanel.addComponentListener(new ComponentAdapter() {
             @Override
@@ -155,10 +171,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         add(accPlay);
         add(hitJudge);
         notes = new ArrayList<>();
-
-        // Configure and position components from initComponents
-        backButton.addActionListener(this);
-        backButton.setBounds(10, 10, 92, 30);
+        
         // Position rank, accuracy, and score on the left side
         rankPlay.setBounds(20, 400, 50, 50);
         accPlay.setBounds(20, 450, 73, 25);
@@ -227,91 +240,91 @@ public class Play extends javax.swing.JFrame implements ActionListener {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
-    private void initComponents() {
-
-        backButton = new javax.swing.JButton();
-        rankPlay = new javax.swing.JLabel();
-        accPlay = new javax.swing.JLabel();
-        scorePlay = new javax.swing.JLabel();
-        hitJudge = new javax.swing.JLabel();
-        songProgress = new javax.swing.JProgressBar();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setBounds(new java.awt.Rectangle(900, 900, 900, 900));
-
-        backButton.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        backButton.setText("<---");
-        backButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                backButtonActionPerformed(evt);
-            }
-        });
-
-        rankPlay.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        rankPlay.setText("D");
-
-        accPlay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        accPlay.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        accPlay.setText("0");
-
-        scorePlay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        scorePlay.setText("0");
-
-        hitJudge.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
-        hitJudge.setText("SICK!");
-        hitJudge.setVisible(false);
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(songProgress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(91, 91, 91)
-                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addComponent(hitJudge)))
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(58, 58, 58)
-                                                .addComponent(accPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addContainerGap()
-                                                .addComponent(backButton, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(83, 83, 83)
-                                                .addComponent(rankPlay))
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(66, 66, 66)
-                                                .addComponent(scorePlay)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGap(18, 18, 18))
-        );
-        layout.setVerticalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                                .addComponent(songProgress, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addComponent(backButton)
-                                                .addGap(30, 30, 30)
-                                                .addComponent(scorePlay)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(rankPlay)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(accPlay)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 257, Short.MAX_VALUE)
-                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                                        .addComponent(hitJudge))
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                                        .addGap(126, 126, 126))))
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        pack();
-    }// </editor-fold>                        
+//    private void initComponents() {
+//
+//        backButton = new javax.swing.JButton();
+//        rankPlay = new javax.swing.JLabel();
+//        accPlay = new javax.swing.JLabel();
+//        scorePlay = new javax.swing.JLabel();
+//        hitJudge = new javax.swing.JLabel();
+//        songProgress = new javax.swing.JProgressBar();
+//
+//        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+//        setBounds(new java.awt.Rectangle(900, 900, 900, 900));
+//
+//        backButton.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+//        backButton.setText("<---");
+//        backButton.addActionListener(new java.awt.event.ActionListener() {
+//            public void actionPerformed(java.awt.event.ActionEvent evt) {
+//                backButtonActionPerformed(evt);
+//            }
+//        });
+//
+//        rankPlay.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+//        rankPlay.setText("D");
+//
+//        accPlay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+//        accPlay.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+//        accPlay.setText("0");
+//
+//        scorePlay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+//        scorePlay.setText("0");
+//
+//        hitJudge.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
+//        hitJudge.setText("SICK!");
+//        hitJudge.setVisible(false);
+//
+//        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+//        getContentPane().setLayout(layout);
+//        layout.setHorizontalGroup(
+//                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+//                        .addComponent(songProgress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+//                        .addGroup(layout.createSequentialGroup()
+//                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addGap(91, 91, 91)
+//                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+//                                                        .addComponent(hitJudge)))
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addGap(58, 58, 58)
+//                                                .addComponent(accPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addContainerGap()
+//                                                .addComponent(backButton, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addGap(83, 83, 83)
+//                                                .addComponent(rankPlay))
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addGap(66, 66, 66)
+//                                                .addComponent(scorePlay)))
+//                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+//                                .addGap(18, 18, 18))
+//        );
+//        layout.setVerticalGroup(
+//                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+//                        .addGroup(layout.createSequentialGroup()
+//                                .addComponent(songProgress, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
+//                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+//                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+//                                        .addGroup(layout.createSequentialGroup()
+//                                                .addComponent(backButton)
+//                                                .addGap(30, 30, 30)
+//                                                .addComponent(scorePlay)
+//                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+//                                                .addComponent(rankPlay)
+//                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+//                                                .addComponent(accPlay)
+//                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 257, Short.MAX_VALUE)
+//                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+//                                                        .addComponent(hitJudge))
+//                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+//                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+//                                                        .addGap(126, 126, 126))))
+//                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+//        );
+//
+//        pack();
+//    }// </editor-fold>                        
 
     private void backButtonActionPerformed(java.awt.event.ActionEvent evt) {
         if (evt.getSource() == backButton) {
