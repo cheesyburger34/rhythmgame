@@ -88,7 +88,7 @@ public class Menu extends javax.swing.JFrame implements ActionListener {
         });
 
         title.setFont(new java.awt.Font("Segoe UI", 1, 80)); // NOI18N
-        title.setText("INSERT TITLE");
+        title.setText("BUDGET BEATS");
 
         playBtn.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         playBtn.setText("PLAY");

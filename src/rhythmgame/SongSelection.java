@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.GroupLayout;
@@ -195,7 +197,7 @@ public class SongSelection extends JFrame implements ActionListener {
         updateSongInfo();
     }
 
-    private void pressPlayActionPerformed(ActionEvent evt) {
+    private void pressPlayActionPerformed(ActionEvent evt) throws IOException {
         if (selectedSong != null) {
             new Play(selectedSong);
             dispose();
@@ -234,7 +236,11 @@ public class SongSelection extends JFrame implements ActionListener {
         if (e.getSource() == song1Btn) {
             song1BtnActionPerformed(e);
         } else if (e.getSource() == pressPlay) {
-            pressPlayActionPerformed(e);
+            try {
+                pressPlayActionPerformed(e);
+            } catch (IOException ex) {
+                Logger.getLogger(SongSelection.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else if (e.getSource() == backButton) {
             backButtonActionPerformed(e);
         }
@@ -254,7 +260,7 @@ public class SongSelection extends JFrame implements ActionListener {
 
         java.awt.EventQueue.invokeLater(() -> {
             try {
-                new SongSelection().setVisible(true);
+                new SongSelection();
             } catch (IOException ex) {
                 logger.log(java.util.logging.Level.SEVERE, null, ex);
             }

@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,38 +37,58 @@ import javax.swing.Timer;
  */
 public class Play extends javax.swing.JFrame implements ActionListener {
 
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Play.class.getName());
-    private Song song;
-    private Clip clip;
-
     /**
      * Creates new form Play
      *
      * @param song
      */
     // Variables declaration
-    private long songStartTime; // delay before song starts
+    private long songStartTime = 0; // delay before song starts
     private ArrayList<Note> notes;
     private ArrayList<Note> baseNotes;
     private GamePanel gamePanel;
 
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Play.class.getName());
+    private Song song;
+    private Clip clip;
+
+    private Settings settings;
+
     private JLabel accPlay;
     private JButton backButton;
     private JButton startSongBtn;
-    private JLabel badPlay;
-    private JLabel goodPlay;
-    //private JPanel jPanel1;
-    private JLabel missPlay;
+
     private JLabel rankPlay;
     private JLabel scorePlay;
+
     private JLabel sickPlay;
+    private JLabel badPlay;
+    private JLabel goodPlay;
+    private JLabel missPlay;
     private JProgressBar songProgress;
 
     private double noteSpeed;
     private long songDuration;
+
+    private int score = 0;
+    private int combo = 0;
+    private int maxCombo = 0;
+
+    // Timing windows in milliseconds
+    private static final int SICK_WINDOW = 30;
+    private static final int GOOD_WINDOW = 75;
+    private static final int BAD_WINDOW = 150;
+
+    // Base scores
+    private static final int SICK_SCORE = 300;
+    private static final int GOOD_SCORE = 150;
+    private static final int BAD_SCORE = 50;
+    private static final int MISS_SCORE = 0;
+
+    private int targetLineY = gamePanel.getTargetLineY();
     // End of variables declaration                   
 
-    public Play(Song song) {
+    public Play(Song song) throws IOException {
         initComponents();
         this.song = song;
         setTitle("Play");
@@ -76,6 +97,9 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         Container c = getContentPane();
         c.setLayout(null); // Use null layout for manual positioning
         setLocationRelativeTo(null);
+
+        settings = new Settings();
+        settings.loadFromFile(); // read values from settings.txt
 
         // Add game panel as the lanes and notes
         gamePanel = new GamePanel(/* parameters */);
@@ -139,7 +163,11 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         startSongBtn = new JButton("START");
         startSongBtn.setBounds(350, 325, 150, 150);
         startSongBtn.addActionListener(this);
+        startSongBtn.setVisible(true);
         c.add(startSongBtn);
+
+        // Add gamePanel last so it’s below buttons
+        c.add(gamePanel);
 
         // Set up key listener
         gamePanel.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -152,6 +180,10 @@ public class Play extends javax.swing.JFrame implements ActionListener {
         });
         gamePanel.setFocusable(true);
         gamePanel.requestFocusInWindow();
+
+        // Force repaint so all GUI renders
+        c.revalidate();
+        c.repaint();
 
         setVisible(true);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -355,6 +387,7 @@ public class Play extends javax.swing.JFrame implements ActionListener {
     }
 
     private void playSong() {
+        songStartTime = System.currentTimeMillis(); // Starting point used for hit deltas
         Timer audioTimer = new javax.swing.Timer(2000, e -> {
             try {
                 URL audioUrl = getClass().getResource(song.getMusic());
@@ -387,72 +420,140 @@ public class Play extends javax.swing.JFrame implements ActionListener {
 
     // Got the txt file reader idea for each note from a youtube video
     private void playGame() {
-    notes = new ArrayList<>();
-    baseNotes = new ArrayList<>();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-            getClass().getResourceAsStream(song.getBeatmap())))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) continue;
-            String[] parts = line.split(",");
-            if (parts.length == 3) {
-                try {
-                    long spawnTime = Long.parseLong(parts[0].trim());
-                    int lane = Integer.parseInt(parts[1].trim());
-                    int type = Integer.parseInt(parts[2].trim());
-                    baseNotes.add(new Note((int) spawnTime, lane, type));
-                } catch (NumberFormatException e) {
-                    System.err.println("Invalid note data: " + line);
+        notes = new ArrayList<>();
+        baseNotes = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                getClass().getResourceAsStream(song.getBeatmap())))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] parts = line.split(",");
+                if (parts.length == 3) {
+                    try {
+                        long spawnTime = Long.parseLong(parts[0].trim());
+                        int lane = Integer.parseInt(parts[1].trim());
+                        int type = Integer.parseInt(parts[2].trim());
+                        baseNotes.add(new Note((int) spawnTime, lane, type));
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid note data: " + line);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error loading beatmap",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (baseNotes.isEmpty()) {
+            System.err.println("No notes loaded from beatmap");
+            return;
+        }
+
+        // Calculate loop duration as the max spawn time plus a small buffer
+        long loopDuration = 0;
+        for (Note baseNote : baseNotes) {
+            loopDuration = Math.max(loopDuration, baseNote.getSpawnTime());
+        }
+        loopDuration += 1; // Ensure gap after last note
+
+        // Precompute all notes
+        long currentOffset = 0;
+        while (currentOffset < songDuration) {
+            for (Note baseNote : baseNotes) {
+                long newSpawnTime = baseNote.getSpawnTime() + currentOffset;
+                if (newSpawnTime >= songDuration) {
+                    break;
+                }
+                notes.add(new Note((int) newSpawnTime, baseNote.getLane(), baseNote.getType()));
+            }
+            currentOffset += loopDuration;
+        }
+    }
+
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyChar() == settings.getLaneBindL().charAt(0)) { // e.g., KeyEvent.VK_SPACE
+            for (Note note : notes) {
+                if (note.isOverlapping(targetLineY, 50)) {
+                    registerHit(note);
+                    break; // Only allow one hit per press
                 }
             }
         }
-    } catch (IOException e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(this, "Error loading beatmap", 
-            "Error", JOptionPane.ERROR_MESSAGE);
-        return;
     }
 
-    if (baseNotes.isEmpty()) {
-        System.err.println("No notes loaded from beatmap");
-        return;
-    }
+    public void registerHit(Note note) {
+        long hitTime = System.currentTimeMillis() - songStartTime;
+        long expectedTime = note.getSpawnTime(); // The correct time to hit the note
+        long delta = Math.abs(hitTime - expectedTime);
 
-    // Calculate loop duration as the max spawn time plus a small buffer
-    long loopDuration = 0;
-    for (Note baseNote : baseNotes) {
-        loopDuration = Math.max(loopDuration, baseNote.getSpawnTime());
-    }
-    loopDuration += 1; // Ensure gap after last note
+        String hitResult;
+        int baseScore;
 
-    // Precompute all notes
-    long currentOffset = 0;
-    while (currentOffset < songDuration) {
-        for (Note baseNote : baseNotes) {
-            long newSpawnTime = baseNote.getSpawnTime() + currentOffset;
-            if (newSpawnTime >= songDuration) {
-                break;
-            }
-            notes.add(new Note((int) newSpawnTime, baseNote.getLane(), baseNote.getType()));
+        if (delta <= SICK_WINDOW) {
+            hitResult = "Sick!";
+            baseScore = SICK_SCORE;
+            combo++;
+        } else if (delta <= GOOD_WINDOW) {
+            hitResult = "Good!";
+            baseScore = GOOD_SCORE;
+            combo++;
+        } else if (delta <= BAD_WINDOW) {
+            hitResult = "Bad!";
+            baseScore = BAD_SCORE;
+            combo++;
+        } else {
+            hitResult = "Miss!";
+            baseScore = MISS_SCORE;
+            combo = 0; // Reset combo on miss
         }
-        currentOffset += loopDuration;
+
+        // Combo multiplier (1% per combo, capped at 2x for example)
+        double comboMultiplier = Math.min(1.0 + combo * 0.05, 10.0);
+        int scoreGain = (int) (baseScore * comboMultiplier);
+        score += scoreGain;
+
+        // Track max combo for summary
+        if (combo > maxCombo) {
+            maxCombo = combo;
+        }
+
+        // Remove the note if not a miss (optional: for miss, you might handle removal elsewhere)
+        if (!hitResult.equals("Miss!")) {
+            notes.remove(note);
+        }
+
+        // Optional: Display result
+        updateStats(hitResult, note.getLane(), note.getY());
+
+        // Optional: Play sound, update UI, etc.
+        // playHitSound(hitResult);
+        // updateScoreDisplay(score, combo);
+        // Debug
+        System.out.println(hitResult + " +" + scoreGain + " (Combo: " + combo + ")");
     }
-}
+    
+    private void updateStats(){
+        
+    }
 
     private void updateNotes(long songTime) {
-    Iterator<Note> iterator = notes.iterator();
-    while (iterator.hasNext()) {
-        Note note = iterator.next();
-        if (songTime >= note.getSpawnTime()) {
-            double elapsed = (songTime - note.getSpawnTime()) / 1000.0;
-            note.setYPosition(elapsed * noteSpeed);
-            if (note.getYPosition() > gamePanel.getHeight()) {
-                iterator.remove();
+        Iterator<Note> iterator = notes.iterator();
+        while (iterator.hasNext()) {
+            Note note = iterator.next();
+            if (songTime >= note.getSpawnTime()) {
+                double elapsed = (songTime - note.getSpawnTime()) / 1000.0;
+                note.setYPosition(elapsed * noteSpeed);
+                if (note.getY() > gamePanel.getHeight()) {
+                    iterator.remove();
+                }
             }
         }
     }
-}
 
     private class GamePanel extends JPanel {
 
@@ -478,19 +579,23 @@ public class Play extends javax.swing.JFrame implements ActionListener {
                 g.fillRect(x, 0, LANE_WIDTH - 10, getHeight());
             }
             // Draw target line
-            int targetY = (int) (getHeight() * 0.8); // 80% of panel height
+            int targetLineY = (int) (getHeight() * 0.8); // 80% of panel height
             g.setColor(Color.RED);
-            g.fillRect(startX, targetY, totalLanesWidth - 10, 5);
+            g.fillRect(startX, targetLineY, totalLanesWidth - 10, 5);
 
             // Draw notes
             g.setColor(Color.GREEN);
             for (Note note : notes) {
-                if (note.getYPosition() > 0) {
+                if (note.getY() > 0) {
                     int x = startX + note.getLane() * LANE_WIDTH + 5; // Align with lane
-                    int y = (int) note.getYPosition();
+                    int y = (int) note.getY();
                     g.fillRect(x, y, LANE_WIDTH - 20, NOTE_HEIGHT);
                 }
             }
+        }
+
+        public int getTargetLineY() {
+            return targetLineY;
         }
     }
 

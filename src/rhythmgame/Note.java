@@ -21,7 +21,7 @@ public class Note {
         return lane;
     }
 
-    public double getYPosition() {
+    public double getY() {
         return yPosition;
     }
 
@@ -32,4 +32,8 @@ public class Note {
     public int getType(){
         return type;
     }
+    
+    public boolean isOverlapping(int hitLineY, int margin) {
+    return Math.abs(this.getY() - hitLineY) <= margin;
+}
 }
